@@ -9,3 +9,11 @@ dependencies {
 
     testImplementation "junit:junit:4.12"
 }
+
+ext {
+    PUBLISH_GROUP_ID = 'com.github.vanspo'
+    PUBLISH_ARTIFACT_ID = 'state-machine-extensions'
+    PUBLISH_VERSION = '0.1'
+}
+
+apply from: "${rootProject.projectDir}/scripts/publish-maven.gradle"
