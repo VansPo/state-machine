@@ -71,6 +71,50 @@ fun observeState() {
 // Don't forget to unsubscribe if you no longer need state updates
 fun unsubscribe() = stateObserver?.unsubscribe()
 ```
+## Extensions (WIP)
+### TransientRegistry
+Extension for `Registry<T>()` that allows you to mark some of the states as `Transient` in order to retain latest non-transient state.
+Example:
+```kotlin
+sealed class State {
+    data class Content(val title: String) : State()
+    object Progress : State(), Transient
+    object Error : State()
+    object Empty: State()
+}
+
+// init your state machine with TransientRegistry
+val registry = TransientRegistry<State>()
+stateMachine(State.Empty,registry) {
+    // declare state transitions
+}
+
+// ...
+fun example() {
+    stateMachine.postEvent(Event.OnContent("test"))
+    assert(stateMachine.state is State.Content)
+    stateMachine.postEvent(Event.OnRefresh)
+    assert(stateMachine.state is State.Progress)
+    val latestState = registry.latestNonTransientState
+    assert(latestState == State.Content("test"))
+}
+```
+### Lifecycle-aware observer
+Subscribe to state updates with provided `LifecycleOwner` to automatically unsubscribe from events after receiving `Lifecycle.Event.ON_DESTROY`.
+By default it uses a `kotlinx.coroutines.MainScope()` coroutine scope to force updates on main thread. You can substitute it with your own scope.
+```kotlin
+// in Activity class:
+fun observe() {
+    viewModel.stateMachine.observeWithLifecycle(
+        this, // LifecycleOwner
+        myScope // or leave a default scope
+    ) {
+        state<State.Content> {
+            onEnter { /* update UI */ }
+        }
+    }
+}
+```
 ## Download
 ### Gradle
-`implementation 'com.github.vanspo:state-machine:0.2'`
+`implementation 'com.github.vanspo:state-machine:0.3.0'`
