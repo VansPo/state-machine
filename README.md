@@ -73,4 +73,4 @@ fun unsubscribe() = stateObserver?.unsubscribe()
 ```
 ## Download
 ### Gradle
-`implementation 'com.github.vanspo:state-machine:0.2'`
+`implementation 'com.github.vanspo:state-machine:0.3.0'`
