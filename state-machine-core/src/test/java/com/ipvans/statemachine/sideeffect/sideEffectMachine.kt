@@ -3,9 +3,7 @@ package com.ipvans.statemachine.sideeffect
 import com.ipvans.statemachine.stateMachine
 
 fun sideEffectMachine() =
-    stateMachine<State, Event, Effect>(
-        State.Progress
-    ) {
+    stateMachine<State, Event, Effect>(State.Progress) {
         state<State.Progress> {
             onEvent<Event.OnSearch> { event, _ ->
                 transitionTo(
@@ -13,35 +11,18 @@ fun sideEffectMachine() =
                     Effect.RunSearch(event.query)
                 )
             }
-            onEvent<Event.OnContent> { event, _ ->
-                transitionTo(
-                    State.Content(event.content)
-                )
-            }
+            onEvent<Event.OnContent> { event, _ -> transitionTo(State.Content(event.content)) }
         }
         state<State.Content> {
-            onEvent<Event.OnRefreshForever> { _, _ ->
-                transitionTo(
-                    State.Progress
-                )
-            }
-            onEvent<Event.OnRefresh> { _, _ ->
-                transitionTo(
-                    State.Progress,
-                    Effect.RunFullRefresh
-                )
-            }
+            onEvent<Event.OnRefreshForever> { _, _ -> transitionTo(State.Progress) }
+            onEvent<Event.OnRefresh> { _, _ -> transitionTo(State.Progress, Effect.RunFullRefresh) }
             onEvent<Event.OnSearch> { event, _ ->
                 transitionTo(
                     State.Progress,
                     Effect.RunSearch(event.query)
                 )
             }
-            onEvent<Event.OnContent> { event, _ ->
-                transitionTo(
-                    State.Content(event.content)
-                )
-            }
+            onEvent<Event.OnContent> { event, _ -> transitionTo(State.Content(event.content)) }
         }
     }
 

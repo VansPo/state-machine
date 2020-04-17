@@ -2,7 +2,7 @@ apply plugin: 'java-library'
 apply plugin: 'kotlin'
 
 dependencies {
-    implementation project(':state-machine-core')
+    implementation project (":state-machine-core")
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation  "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.1"
     implementation "androidx.lifecycle:lifecycle-extensions:2.1.0"
@@ -13,7 +13,7 @@ dependencies {
 ext {
     PUBLISH_GROUP_ID = 'com.github.vanspo'
     PUBLISH_ARTIFACT_ID = 'state-machine-extensions'
-    PUBLISH_VERSION = '0.1'
+    PUBLISH_VERSION = '0.2'
 }
 
 apply from: "${rootProject.projectDir}/scripts/publish-maven.gradle"

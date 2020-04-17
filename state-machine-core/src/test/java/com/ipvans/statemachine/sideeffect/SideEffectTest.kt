@@ -60,9 +60,10 @@ class SideEffectTest {
                 "1"
             )
         )
-        assert(stateMachine.state == State.Content(
-            listOf("1", "31", "51")
-        )
+        assert(
+            stateMachine.state == State.Content(
+                listOf("1", "31", "51")
+            )
         )
     }
 
