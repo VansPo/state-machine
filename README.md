@@ -117,4 +117,7 @@ fun observe() {
 ```
 ## Download
 ### Gradle
-`implementation 'com.github.vanspo:state-machine:0.3.0'`
+```
+implementation 'com.github.vanspo:state-machine:0.4.0'
+implementation 'com.github.vanspo:state-machine-extensions:0.4.0'
+```
