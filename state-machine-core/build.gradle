@@ -7,13 +7,10 @@ dependencies {
     testImplementation "junit:junit:4.12"
 }
 
-sourceCompatibility = "7"
-targetCompatibility = "7"
-
 ext {
     PUBLISH_GROUP_ID = 'com.github.vanspo'
     PUBLISH_ARTIFACT_ID = 'state-machine'
-    PUBLISH_VERSION = '0.4.0'
+    PUBLISH_VERSION = '0.5.0'
 }
 
 apply from: "${rootProject.projectDir}/scripts/publish-maven.gradle"
