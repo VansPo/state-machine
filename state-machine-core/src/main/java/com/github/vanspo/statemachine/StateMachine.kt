@@ -16,6 +16,7 @@ class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constru
 ) {
     private val transitionObservers: CopyOnWriteArrayList<TransitionObserver<STATE, SIDE_EFFECT>> =
         CopyOnWriteArrayList()
+    private val messageQueue: MessageQueue = MessageQueue()
 
     val state: STATE
         get() = registry.state
@@ -25,15 +26,13 @@ class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constru
     }
 
     fun postEvent(event: EVENT) = synchronized(this) {
-        onEvent(stateGraph, event)
+        messageQueue.post { onEvent(stateGraph, event) }
     }
 
     fun observe(
         transitionRelay: TransitionRelay = DefaultTransitionRelay(),
         block: TransitionObserver<STATE, SIDE_EFFECT>.() -> Unit
-    ): Subscription = TransitionObserver<STATE, SIDE_EFFECT>(
-        transitionRelay
-    ).let { observer ->
+    ): Subscription = TransitionObserver<STATE, SIDE_EFFECT>(transitionRelay).let { observer ->
         block(observer)
         transitionObservers.add(observer)
         // Push latest state
@@ -50,6 +49,7 @@ class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constru
         graph: StateGraph<STATE, EVENT, SIDE_EFFECT>,
         event: EVENT
     ) {
+        messageQueue.stop()
         logger.log("Event ${event::class.java.simpleName}")
         val transition = graph.findCurrentStateDefinition()
             ?.reducers
@@ -57,6 +57,7 @@ class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constru
             ?.invoke(event, registry.state)
         if (transition == null) {
             logger.log("State ${this::class.java.simpleName}: no transition found for event ${event::class.java.simpleName}")
+            messageQueue.start()
             return
         }
         val oldState = registry.state
@@ -72,6 +73,7 @@ class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constru
             transitionObservers.forEach { it.onEnterState(registry.state) }
         }
         transitionObservers.forEach { it.onSideEffect(transition.sideEffect) }
+        messageQueue.start()
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -91,8 +93,7 @@ class StateGraph<STATE : Any, EVENTS : Any, SIDE_EFFECT : Any> {
         clazz: KClass<S>,
         block: StateDefinition<STATE, S, EVENTS, SIDE_EFFECT>.() -> Unit
     ) {
-        val definition = StateDefinition<STATE, S, EVENTS, SIDE_EFFECT>()
-            .apply(block)
+        val definition = StateDefinition<STATE, S, EVENTS, SIDE_EFFECT>().apply(block)
         stateDefinitionMap[clazz] = definition
     }
 }
@@ -122,8 +123,7 @@ data class Reducer<T : Any, S : T, EV : Any, SE : Any>(
     fun transitionTo(
         newState: T,
         sideEffect: SE? = null
-    ): Transition<T, SE> =
-        Transition(newState, sideEffect)
+    ): Transition<T, SE> = Transition(newState, sideEffect)
 
     internal fun invoke(event: EV, oldState: S) = function.invoke(this, event, oldState)
 }
