@@ -1,4 +1,4 @@
-package com.github.statemachine.extensions.registry
+package com.github.vanspo.statemachine.extensions.registry
 
 import com.github.vanspo.statemachine.StateMachine
 import com.github.vanspo.statemachine.extensions.registry.Transient
@@ -7,60 +7,60 @@ import com.github.vanspo.statemachine.stateMachine
 
 fun transientStateMachine(registry: Registry<State>): StateMachine<State, Event, Nothing> =
     stateMachine(
-        State.Empty,
+            State.Empty,
         registry
     ) {
         state<State.Empty> {
             onEvent<Event.OnRefresh> { _, _ ->
                 transitionTo(
-                    State.Progress
+                        State.Progress
                 )
             }
             onEvent<Event.OnContent> { event, _ ->
                 transitionTo(
-                    State.Content(
-                        event.title
-                    )
+                        State.Content(
+                                event.title
+                        )
                 )
             }
         }
         state<State.Progress> {
             onEvent<Event.OnContent> { event, _ ->
                 transitionTo(
-                    State.Content(
-                        event.title
-                    )
+                        State.Content(
+                                event.title
+                        )
                 )
             }
             onEvent<Event.OnError> { _, _ ->
                 transitionTo(
-                    State.Error
+                        State.Error
                 )
             }
         }
         state<State.Content> {
             onEvent<Event.OnRefresh> { _, _ ->
                 transitionTo(
-                    State.Progress
+                        State.Progress
                 )
             }
             onEvent<Event.OnTemporaryError> { _, _ ->
                 transitionTo(
-                    State.ErrorToast
+                        State.ErrorToast
                 )
             }
         }
         state<State.Error> {
             onEvent<Event.OnRefresh> { _, _ ->
                 transitionTo(
-                    State.Progress
+                        State.Progress
                 )
             }
         }
         state<State.ErrorToast> {
             onEvent<Event.OnRefresh> { _, _ ->
                 transitionTo(
-                    State.Progress
+                        State.Progress
                 )
             }
             onEvent<Event.OnDismissToastError> { event, _ ->

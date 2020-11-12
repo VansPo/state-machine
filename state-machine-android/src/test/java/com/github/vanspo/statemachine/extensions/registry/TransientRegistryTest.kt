@@ -1,4 +1,4 @@
-package com.github.statemachine.extensions.registry
+package com.github.vanspo.statemachine.extensions.registry
 
 import com.github.vanspo.statemachine.StateMachine
 import com.github.vanspo.statemachine.extensions.registry.TransientStateRegistry
@@ -29,24 +29,24 @@ class TransientRegistryTest {
     fun `when in transient state restore from latest content state`() {
         stateMachine.postEvent(Event.OnRefresh)
         stateMachine.postEvent(
-            Event.OnContent(
-                "test"
-            )
+                Event.OnContent(
+                        "test"
+                )
         )
         stateMachine.postEvent(Event.OnTemporaryError)
         assert(stateMachine.state is State.ErrorToast)
         val latestState: State.Content = registry.latestNonTransientState as State.Content
         assert(latestState == State.Content(
-            "test"
+                "test"
         )
         )
         stateMachine.postEvent(
-            Event.OnDismissToastError(
-                latestState
-            )
+                Event.OnDismissToastError(
+                        latestState
+                )
         )
         assert(stateMachine.state == State.Content(
-            "test"
+                "test"
         )
         )
     }
