@@ -9,13 +9,13 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
 class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constructor(
-    initialState: STATE,
-    private val registry: Registry<STATE> = Registry(),
-    private val logger: Logger = DefaultLogger(),
-    private val stateGraph: StateGraph<STATE, EVENT, SIDE_EFFECT>
+        initialState: STATE,
+        private val registry: Registry<STATE> = Registry(),
+        private val logger: Logger = DefaultLogger(),
+        private val stateGraph: StateGraph<STATE, EVENT, SIDE_EFFECT>
 ) {
     private val transitionObservers: CopyOnWriteArrayList<TransitionObserver<STATE, SIDE_EFFECT>> =
-        CopyOnWriteArrayList()
+            CopyOnWriteArrayList()
     private val messageQueue: MessageQueue = MessageQueue()
 
     val state: STATE
@@ -30,8 +30,8 @@ class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constru
     }
 
     fun observe(
-        transitionRelay: TransitionRelay = DefaultTransitionRelay(),
-        block: TransitionObserver<STATE, SIDE_EFFECT>.() -> Unit
+            transitionRelay: TransitionRelay = DefaultTransitionRelay(),
+            block: TransitionObserver<STATE, SIDE_EFFECT>.() -> Unit
     ): Subscription = TransitionObserver<STATE, SIDE_EFFECT>(transitionRelay).let { observer ->
         block(observer)
         transitionObservers.add(observer)
@@ -46,17 +46,17 @@ class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constru
     }
 
     private fun onEvent(
-        graph: StateGraph<STATE, EVENT, SIDE_EFFECT>,
-        event: EVENT
+            graph: StateGraph<STATE, EVENT, SIDE_EFFECT>,
+            event: EVENT
     ) {
         messageQueue.stop()
-        logger.log("Event ${event::class.java.simpleName}")
+        logger.log("Event ${registry.state::class.simpleName}:${event::class.java.simpleName}")
         val transition = graph.findCurrentStateDefinition()
-            ?.reducers
-            ?.get(event::class)
-            ?.invoke(event, registry.state)
+                ?.reducers
+                ?.get(event::class)
+                ?.invoke(event, registry.state)
         if (transition == null) {
-            logger.log("State ${this::class.java.simpleName}: no transition found for event ${event::class.java.simpleName}")
+            logger.log("State ${registry.state::class.simpleName}: no transition found for event ${event::class.simpleName}")
             messageQueue.start()
             return
         }
@@ -65,33 +65,36 @@ class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constru
             logger.log("Staying in a current state $oldState")
         } else {
             logger.log(
-                "State transition from ${oldState::class.java.simpleName} " +
-                        "to ${transition.newState::class.java.simpleName}"
+                    "State transition ${oldState::class.java.simpleName}->" +
+                            transition.newState::class.java.simpleName
             )
             registry.state = transition.newState
             transitionObservers.forEach { it.onExitState(oldState) }
             transitionObservers.forEach { it.onEnterState(registry.state) }
         }
-        transitionObservers.forEach { it.onSideEffect(transition.sideEffect) }
+        transition.sideEffect?.run {
+            logger.log("Effect ${registry.state::class.simpleName}:${this::class.java.simpleName}")
+            transitionObservers.forEach { it.onSideEffect(this) }
+        }
         messageQueue.start()
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun StateGraph<STATE, EVENT, SIDE_EFFECT>.findCurrentStateDefinition(): StateDefinition<STATE, STATE, EVENT, SIDE_EFFECT>? =
-        stateDefinitionMap[registry.state::class] as StateDefinition<STATE, STATE, EVENT, SIDE_EFFECT>?
+            stateDefinitionMap[registry.state::class] as StateDefinition<STATE, STATE, EVENT, SIDE_EFFECT>?
 }
 
 class StateGraph<STATE : Any, EVENTS : Any, SIDE_EFFECT : Any> {
     internal val stateDefinitionMap: MutableMap<KClass<out STATE>, StateDefinition<STATE, out STATE, EVENTS, SIDE_EFFECT>> =
-        mutableMapOf()
+            mutableMapOf()
 
     inline fun <reified S : STATE> state(
-        noinline block: StateDefinition<STATE, S, EVENTS, SIDE_EFFECT>.() -> Unit
+            noinline block: StateDefinition<STATE, S, EVENTS, SIDE_EFFECT>.() -> Unit
     ) = state(S::class, block)
 
     fun <S : STATE> state(
-        clazz: KClass<S>,
-        block: StateDefinition<STATE, S, EVENTS, SIDE_EFFECT>.() -> Unit
+            clazz: KClass<S>,
+            block: StateDefinition<STATE, S, EVENTS, SIDE_EFFECT>.() -> Unit
     ) {
         val definition = StateDefinition<STATE, S, EVENTS, SIDE_EFFECT>().apply(block)
         stateDefinitionMap[clazz] = definition
@@ -100,53 +103,53 @@ class StateGraph<STATE : Any, EVENTS : Any, SIDE_EFFECT : Any> {
 
 class StateDefinition<TRANSITION : Any, STATE : TRANSITION, EVENT : Any, SIDE_EFFECT : Any> {
     internal var reducers: MutableMap<KClass<out EVENT>, Reducer<TRANSITION, STATE, EVENT, SIDE_EFFECT>> =
-        mutableMapOf()
+            mutableMapOf()
 
     inline fun <reified E : EVENT> onEvent(
-        noinline reducer: Reducer<TRANSITION, STATE, EVENT, SIDE_EFFECT>.(event: E, oldState: STATE) -> Transition<TRANSITION, SIDE_EFFECT>
+            noinline reducer: Reducer<TRANSITION, STATE, EVENT, SIDE_EFFECT>.(event: E, oldState: STATE) -> Transition<TRANSITION, SIDE_EFFECT>
     ) = onEvent(E::class, reducer)
 
     fun <E : EVENT> onEvent(
-        clazz: KClass<E>,
-        reducer: Reducer<TRANSITION, STATE, EVENT, SIDE_EFFECT>.(event: E, oldState: STATE) -> Transition<TRANSITION, SIDE_EFFECT>
+            clazz: KClass<E>,
+            reducer: Reducer<TRANSITION, STATE, EVENT, SIDE_EFFECT>.(event: E, oldState: STATE) -> Transition<TRANSITION, SIDE_EFFECT>
     ) {
         @Suppress("UNCHECKED_CAST")
         val castedReducer =
-            reducer as Reducer<TRANSITION, STATE, EVENT, SIDE_EFFECT>.(EVENT, STATE) -> Transition<TRANSITION, SIDE_EFFECT>
+                reducer as Reducer<TRANSITION, STATE, EVENT, SIDE_EFFECT>.(EVENT, STATE) -> Transition<TRANSITION, SIDE_EFFECT>
         reducers[clazz] = Reducer(castedReducer)
     }
 }
 
 data class Reducer<T : Any, S : T, EV : Any, SE : Any>(
-    internal var function: Reducer<T, S, EV, SE>.(event: EV, oldState: S) -> Transition<T, SE>
+        internal var function: Reducer<T, S, EV, SE>.(event: EV, oldState: S) -> Transition<T, SE>
 ) {
     fun transitionTo(
-        newState: T,
-        sideEffect: SE? = null
+            newState: T,
+            sideEffect: SE? = null
     ): Transition<T, SE> = Transition(newState, sideEffect)
 
     internal fun invoke(event: EV, oldState: S) = function.invoke(this, event, oldState)
 }
 
 data class Transition<STATE : Any, SIDE_EFFECT : Any>(
-    val newState: STATE,
-    val sideEffect: SIDE_EFFECT? = null
+        val newState: STATE,
+        val sideEffect: SIDE_EFFECT? = null
 )
 
 class TransitionObserver<STATE : Any, SIDE_EFFECT : Any>(
-    private val transitionRelay: TransitionRelay
+        private val transitionRelay: TransitionRelay
 ) {
     private var eventListeners: MutableMap<KClass<out STATE>, EventListener<STATE>> =
-        mutableMapOf()
+            mutableMapOf()
     private var sideEffectListeners: MutableMap<KClass<out SIDE_EFFECT>, SIDE_EFFECT.() -> Unit> =
-        mutableMapOf()
+            mutableMapOf()
 
     inline fun <reified S : STATE> state(
-        noinline block: EventListener<S>.() -> Unit
+            noinline block: EventListener<S>.() -> Unit
     ) = state(S::class, block)
 
     inline fun <reified S : SIDE_EFFECT> onSideEffect(
-        noinline block: S.() -> Unit
+            noinline block: S.() -> Unit
     ) = onSideEffect(S::class, block)
 
     fun <S : SIDE_EFFECT> onSideEffect(sideEffect: KClass<S>, block: S.() -> Unit) {
@@ -157,32 +160,32 @@ class TransitionObserver<STATE : Any, SIDE_EFFECT : Any>(
     fun <S : STATE> state(state: KClass<S>, block: EventListener<S>.() -> Unit) {
         @Suppress("UNCHECKED_CAST")
         eventListeners[state] =
-            EventListener<S>().apply { block() } as EventListener<STATE>
+                EventListener<S>().apply { block() } as EventListener<STATE>
     }
 
     internal fun onExitState(state: STATE) = transitionRelay.onTransition {
         eventListeners[state::class]
-            ?.onExitTransition
-            ?.invoke(state)
+                ?.onExitTransition
+                ?.invoke(state)
     }
 
     internal fun onEnterState(state: STATE) = transitionRelay.onTransition {
         eventListeners[state::class]
-            ?.onEnterTransition
-            ?.invoke(state)
+                ?.onEnterTransition
+                ?.invoke(state)
     }
 
     internal fun onSideEffect(effect: SIDE_EFFECT?) = transitionRelay.onTransition {
         effect?.run {
             sideEffectListeners[effect::class]
-                ?.invoke(effect)
+                    ?.invoke(effect)
         }
     }
 }
 
 data class EventListener<STATE>(
-    internal var onEnterTransition: (STATE.() -> Unit)? = null,
-    internal var onExitTransition: (STATE.() -> Unit)? = null
+        internal var onEnterTransition: (STATE.() -> Unit)? = null,
+        internal var onExitTransition: (STATE.() -> Unit)? = null
 ) {
     fun onEnter(transition: STATE.() -> Unit) = apply {
         onEnterTransition = transition

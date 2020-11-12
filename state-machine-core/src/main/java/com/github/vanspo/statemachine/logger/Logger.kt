@@ -7,6 +7,6 @@ interface Logger {
 }
 
 class DefaultLogger : Logger {
-    private val tag = StateMachine::class
+    private val tag = StateMachine::class.simpleName
     override fun log(message: String) = println("$tag: $message")
 }
