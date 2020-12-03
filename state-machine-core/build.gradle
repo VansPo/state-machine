@@ -10,7 +10,7 @@ dependencies {
 ext {
     PUBLISH_GROUP_ID = 'com.github.vanspo'
     PUBLISH_ARTIFACT_ID = 'state-machine'
-    PUBLISH_VERSION = '0.6.0'
+    PUBLISH_VERSION = '0.6.1'
 }
 
 apply from: "${rootProject.projectDir}/scripts/publish-maven.gradle"
