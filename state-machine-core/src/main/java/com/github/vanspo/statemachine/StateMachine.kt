@@ -2,6 +2,7 @@ package com.github.vanspo.statemachine
 
 import com.github.vanspo.statemachine.logger.DefaultLogger
 import com.github.vanspo.statemachine.logger.Logger
+import com.github.vanspo.statemachine.registry.DefaultStateRegistry
 import com.github.vanspo.statemachine.registry.Registry
 import com.github.vanspo.statemachine.relay.DefaultTransitionRelay
 import com.github.vanspo.statemachine.relay.TransitionRelay
@@ -10,7 +11,7 @@ import kotlin.reflect.KClass
 
 class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constructor(
         initialState: STATE,
-        private val registry: Registry<STATE> = Registry(),
+        private val registry: Registry<STATE> = DefaultStateRegistry(),
         private val logger: Logger = DefaultLogger(),
         private val stateGraph: StateGraph<STATE, EVENT, SIDE_EFFECT>
 ) {
@@ -22,7 +23,7 @@ class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constru
         get() = registry.state
 
     init {
-        registry.state = initialState
+        registry.updateState(initialState)
     }
 
     fun postEvent(event: EVENT) = synchronized(this) {
@@ -68,7 +69,7 @@ class StateMachine<STATE : Any, EVENT : Any, SIDE_EFFECT : Any> internal constru
                     "State transition ${oldState::class.java.simpleName}->" +
                             transition.newState::class.java.simpleName
             )
-            registry.state = transition.newState
+            registry.updateState(transition.newState)
             transitionObservers.forEach { it.onExitState(oldState) }
             transitionObservers.forEach { it.onEnterState(registry.state) }
         }

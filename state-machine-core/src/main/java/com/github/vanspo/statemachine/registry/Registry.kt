@@ -2,17 +2,20 @@ package com.github.vanspo.statemachine.registry
 
 import java.util.concurrent.atomic.AtomicReference
 
-open class Registry<T : Any> {
-    private val lock: Any = Any()
-    private val _state: AtomicReference<T> = AtomicReference()
+abstract class Registry<T : Any> {
+    abstract var state: T
+        protected set
+
+    internal fun updateState(newState: T) {
+        state = newState
+    }
+}
+
+open class DefaultStateRegistry<T : Any> : Registry<T>() {
+    protected val _state: AtomicReference<T> = AtomicReference()
 
     @Suppress("MemberVisibilityCanBePrivate")
-    var state: T
+    override var state: T
         get() = _state.get()
-        internal set(value) = synchronized(lock) {
-            _state.set(value)
-            onNewState(value)
-        }
-
-    open fun onNewState(state: T) {}
+        set(value) = _state.set(value)
 }
