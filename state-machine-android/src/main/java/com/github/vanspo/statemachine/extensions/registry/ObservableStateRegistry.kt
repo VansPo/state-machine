@@ -14,8 +14,8 @@ class ObservableStateRegistry<S : Any> : Registry<S>() {
         }
     val stateFlow: Flow<S> = _stateFlow.filterNotNull()
 
-    fun <R> selectObserve(property: KProperty1<S, R>) = _stateFlow
-            .filterNotNull()
-            .map { property.get(it) }
+    inline fun <reified P: S, R> selectObserve(property: KProperty1<P, R>) = stateFlow
+            .filter { it is P }
+            .map { property.get(it as P) }
             .distinctUntilChanged()
 }
