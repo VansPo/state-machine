@@ -28,7 +28,7 @@ class LiveSideEffectTest {
     }
 }
 
-fun stateMachine() = stateMachine<State, Event, Effect>(State.Start) {
+private fun stateMachine() = stateMachine<State, Event, Effect>(State.Start) {
     state<State.Start> {
         onEvent<Event.OnClose> { _, _ -> transitionTo(State.Stop, Effect.Increment) }
     }
@@ -37,16 +37,16 @@ fun stateMachine() = stateMachine<State, Event, Effect>(State.Start) {
     }
 }
 
-sealed class State {
+private sealed class State {
     object Start : State()
     object Stop : State()
 }
 
-sealed class Event {
+private sealed class Event {
     object OnClose : Event()
     object OnRestart : Event()
 }
 
-sealed class Effect {
+private sealed class Effect {
     object Increment : Effect()
 }
