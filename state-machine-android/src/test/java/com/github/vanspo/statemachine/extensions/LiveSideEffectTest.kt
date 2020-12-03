@@ -4,10 +4,12 @@ import com.github.vanspo.statemachine.StateMachine
 import com.github.vanspo.statemachine.stateMachine
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
+@ExperimentalCoroutinesApi
 class LiveSideEffectTest {
     private lateinit var stateMachine: StateMachine<State, Event, Effect>
     private lateinit var effectFlow: Flow<Effect.Increment>
@@ -18,13 +20,23 @@ class LiveSideEffectTest {
     }
 
     @Test
-    fun `assert side effect collected once`() = runBlocking {
-        var count = 0
-        effectFlow = stateMachine.observeAsLiveEvent(this)
+    fun `assert side effects collected once`() = runBlockingTest {
+        effectFlow = stateMachine.sideEffectAsLiveEvent(this)
+
         stateMachine.postEvent(Event.OnClose)
         stateMachine.postEvent(Event.OnRestart)
-        effectFlow.take(2).onEach { count++ }.collect()
-        assertEquals(2, count)
+
+        val firstSubscriptionEffects = collectAllEffects()
+        val secondSubscriptionEffects = collectAllEffects()
+        assertEquals(2, firstSubscriptionEffects.size)
+        assertEquals(0, secondSubscriptionEffects.size)
+    }
+
+    private fun CoroutineScope.collectAllEffects(): List<Effect.Increment> {
+        val observedValue = mutableListOf<Effect.Increment>()
+        val job  = launch { effectFlow.toList(observedValue) }
+        job.cancel()
+        return observedValue
     }
 }
 
