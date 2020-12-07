@@ -72,8 +72,37 @@ fun observeState() {
 fun unsubscribe() = stateObserver?.unsubscribe()
 ```
 ## Extensions (WIP)
+### ObservableStateRegistry
+An extension for `Registry<T>()` that allows you to observe a selected `State` value. It is useful if you want to trigger certain events only when the observed value has changed, regardless of state transition sequence:
+```kotlin
+sealed class State(val common: Int) {
+    data class First(val isLoading: Boolean) : State(1)
+    data class Second(val isLoading: Boolean) : State(2)
+}
+
+// init your state machine with ObservableStateregistry
+val registry = ObservableStateRegistry<State>()
+stateMachine(State.First(false), registry = registry) {
+    // declare state transitions
+}
+
+fun example() {
+    registry.selectObserve(State.First::isLoading)
+        .onEach {
+            // will be triggered whenever State.First::isLoading changes its value
+        }
+        .launchIn(lifecycleScope)
+        
+    registry.selectObserve(State::common)
+        .onEach {
+            // will be triggered every time State changes from First to Second and vice versa
+        }
+        .launchIn(lifecycleScope)
+}
+
+```
 ### TransientRegistry
-Extension for `Registry<T>()` that allows you to mark some of the states as `Transient` in order to retain latest non-transient state.
+An extension for `Registry<T>()` that allows you to mark some of the states as `Transient` in order to retain latest non-transient state.
 Example:
 ```kotlin
 sealed class State {
@@ -118,8 +147,8 @@ fun observe() {
 ## Download
 ### Gradle
 ```
-implementation 'com.github.vanspo:state-machine:0.5.1'
-implementation 'com.github.vanspo:state-machine-extensions:0.5.1'
+implementation 'com.github.vanspo:state-machine:0.6.2'
+implementation 'com.github.vanspo:state-machine-extensions:0.6.2'
 ```
 ## Licence
 ```
